@@ -2,7 +2,7 @@
 import { asynchandler } from "../utils/asynchandler.js";
 import { apiresponse } from "../utils/responsehandler.js";
 import { apierror } from "../utils/apierror.js";
-import { sendemailverification } from "../middelwares/Email.js";
+// import { sendemailverification } from "../middelwares/Email.js";
  
 const delunverifiedusers=asynchandler(async(req,res)=>{
 
@@ -35,7 +35,7 @@ let registeruser = asynchandler(async (req, res) => {
         }
     }
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     let user;
     try {
@@ -44,17 +44,16 @@ let registeruser = asynchandler(async (req, res) => {
             
             email,
             password,
-           
-            verificationcode: verificationCode,
         });
  
 
        
 
         
-        await sendemailverification(user.email, user.verificationcode);
+        // await sendemailverification(user.email, user.verificationcode);
+        await user.save();
 
-        return res.status(200).json({ message: "Please verify your email", otp: user.verificationcode });
+        return res.status(200).json({ message: "Signed up successfully", user });
     } catch (error) {
         console.error("Error creating user:", error);
         return res.status(500).json({ message: "Error creating user", error: error.message });
