@@ -15,13 +15,25 @@ const delunverifiedusers=asynchandler(async(req,res)=>{
 
 
 })
+
+const generateaccestoken=async(userid)=>{
+try {
+    const user=await User.findById(userid)
+    const accesstoken=await user.generateaccesstoken()
+
+    await user.save()
+    return {accesstoken}
+} catch (error) {
+    throw new apierror(500,"Error generating token")
+}
+}
  
 let registeruser = asynchandler(async (req, res) => {
     console.log("Register route hit");
-    const { email, password } = req.body;
+    const { email, password,fullname,number,loyaltycard_no } = req.body;
 
     // Validate input fields
-    if ( !email || !password ) {
+    if ( !email || !password ||!fullname || !number || !loyaltycard_no) {
         throw new apierror(400, "All fields are required");
     }
 
@@ -44,6 +56,9 @@ let registeruser = asynchandler(async (req, res) => {
             
             email,
             password,
+            fullname,
+            number:parseInt(number),
+            loyaltycard_no:loyaltycard_no
         });
  
 
@@ -52,8 +67,9 @@ let registeruser = asynchandler(async (req, res) => {
         
         // await sendemailverification(user.email, user.verificationcode);
         await user.save();
+        let created_user=await User.findById(user._id).select('-password')
 
-        return res.status(200).json({ message: "Signed up successfully", user });
+        return res.status(200).json({ message: "Signed up successfully", user:created_user });
     } catch (error) {
         console.error("Error creating user:", error);
         return res.status(500).json({ message: "Error creating user", error: error.message });
@@ -95,10 +111,18 @@ const login = asynchandler(async (req, res) => {
     if (!isPasswordValid) {
         throw new apierror(404, "Password is not valid");
     }
+const options={
+    httpOnly:true,
+    secure:true
+}
+    const {accesstoken}=await generateaccestoken(user._id)
 
     const loggedInUser = await User.findById(user._id).select("-password");
-    if (loggedInUser.verified) {
-        return res.json(new apiresponse(200, loggedInUser, "User verified successfully"));
+    if (loggedInUser) {
+        return res
+        .status(200)
+        .cookie('accesstoken',accesstoken,options)
+        .json(new apiresponse(200, {loggedInUser,token:accesstoken}));
     } else {
         return res.json({ message: "User is not verified" });
     }
@@ -205,6 +229,14 @@ const deleteuser=asynchandler(async(req,res)=>{
             user:deleteduser
         })
     }
+})
+export const logout=asynchandler(async(req,res)=>{
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    res.clearCookie('accesstoken',options)
+    res.json({message:"logged out successfully"})
 })
 
 export { registeruser, verifyemail, login, forgotpassword, verifyforgetpassotp, resendotp,delunverifiedusers,updateprofile,getallusers,deleteuser};

@@ -1,16 +1,16 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from 'bcrypt';
-
+import jwt from 'jsonwebtoken';
 const userSchema = new Schema({
-    // name: {
-    //     type: String,
-    //     required: true,
-    //     lowercase: true,
-    // },
-    // number: {
-    //     type: Number,
-    //     required: true,
-    // },
+    fullname: {
+        type: String,
+        required: true,
+        lowercase: true,
+    },
+    number: {
+        type: Number,
+        required: true,
+    },
     email: {
         type: String,
         required: true,
@@ -21,7 +21,10 @@ const userSchema = new Schema({
         type: String,
         required: true,
     },
-   
+   loyaltycard_no:{
+    type:String,
+   },
+
     verified: {
         type: Boolean,
         default: false,
@@ -32,6 +35,11 @@ const userSchema = new Schema({
     forgetpasswordotp: {
         type: String,
     },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user',
+    }
 }, { timestamps: true });
 
  
@@ -47,5 +55,9 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);
 };
+userSchema.methods.generateaccesstoken=function(){
+  return  jwt.sign({id:this._id,role:this.role,email:this.email,fullname:this.fullname,loyaltycard_no:this.loyaltycard_no},process.env.JWT_SECRET,{expiresIn:process.env.ACCESS_TOKEN_EXPIRY})
+}
+
 
 export const User = mongoose.model('User', userSchema);
