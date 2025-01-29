@@ -2,6 +2,7 @@ import express from "express";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
 import userrouter from './Routes/user.routes.js'
+import shoppingitems from './Routes/shoppingitem.routes.js'
  
  
 const app=express()
@@ -13,6 +14,7 @@ app.use(cookieParser())
 
 
 app.use('/api/v1/user',userrouter)
+app.use('/api/v1/shoppingitems',shoppingitems)
  
  
  

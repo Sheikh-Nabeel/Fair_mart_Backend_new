@@ -1,1 +1,1 @@
-export const DB_NAME='Kuick_Tag'
+export const DB_NAME='Fair_Mart'
