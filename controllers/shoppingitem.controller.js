@@ -9,9 +9,9 @@ import { User } from "../models/user.model.js";
 
 export const addshoppingitems = asynchandler(async (req, res) => {
   const results = [];
-  
+  const file=req.file;
   // Use path.resolve for correct absolute path
-  const filePath = path.resolve('controllers/data.csv');
+  const filePath = path.resolve(file.path);
 
   fs.createReadStream(filePath)
     .pipe(csv())
@@ -32,7 +32,7 @@ export const addshoppingitems = asynchandler(async (req, res) => {
               descriptionpoints:item.Description_Points,
               description:item.Description
             });}
-            
+
             else{
               const shoppingitem = await ShoppingItem.create({
                 id:item.Article_No,
@@ -51,12 +51,12 @@ export const addshoppingitems = asynchandler(async (req, res) => {
             }
           });
           if (results.length >0) {
+            fs.unlinkSync(filePath); // delete the file after reading    
             return res.json(new apiresponse(200, "Items added successfully", results));
           }
 
         
        
-       fs.unlinkSync(filePath); // delete the file after reading    
     })
     .on('error', (err) => {
       console.error(err);
@@ -64,4 +64,29 @@ export const addshoppingitems = asynchandler(async (req, res) => {
     });
 
     console.log(results);
+});
+
+export const addimages = asynchandler(async (req, res) => {
+  try {
+    const images = req.files;
+
+    for (const image of images) {
+      const itemId = image.originalname.split('.')[0];
+
+      const updatedItem = await ShoppingItem.findOneAndUpdate(
+        { id: itemId },
+        { imgsrc: image.filename },
+        { new: true }
+      );
+
+      if (!updatedItem) {
+        console.warn(`No shopping item found with id: ${itemId}`);
+      }
+    }
+
+    return res.json({ status: 200, message: "Images added successfully" });
+  } catch (error) {
+    console.error("Error adding images:", error);
+    return res.json(new apierror(500, "Error adding images", error));
+  }
 });
