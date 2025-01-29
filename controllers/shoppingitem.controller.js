@@ -18,27 +18,45 @@ export const addshoppingitems = asynchandler(async (req, res) => {
     .on('data', (data) => results.push(data))
     .on('end',()=>{
         results.forEach(async (item) => {
-            const shoppingitem = await ShoppingItem.create({
-              id:item.Article_No,
+          const existedItem = await ShoppingItem.findOne({ id: item.Article_No });
+          if (existedItem) {
+            const updatedItem = await ShoppingItem.findOneAndUpdate({ id: item.Article_No }, {
               main_category:item.Domain_Name,
               sub_category:item.Department_Name,
               item_category:item.ArticleGroup_Name,
-             discountprice:item.Discount_Price,
-             orignalprice:item.GrossSale_Price,
-             itemfullname:item.Article_Name,
-             brand:item.Brand,
-             fulldesciption:item.Full_Desciption,
-             descriptionpoints:item.Description_Points,
-             description:item.Description
-            });
+              discountprice:item.Discount_Price,
+              orignalprice:item.GrossSale_Price,
+              itemfullname:item.Article_Name,
+              brand:item.Brand,
+              fulldesciption:item.Full_Desciption,
+              descriptionpoints:item.Description_Points,
+              description:item.Description
+            });}
+            
+            else{
+              const shoppingitem = await ShoppingItem.create({
+                id:item.Article_No,
+                main_category:item.Domain_Name,
+                sub_category:item.Department_Name,
+                item_category:item.ArticleGroup_Name,
+               discountprice:item.Discount_Price,
+               orignalprice:item.GrossSale_Price,
+               itemfullname:item.Article_Name,
+               brand:item.Brand,
+               fulldesciption:item.Full_Desciption,
+               descriptionpoints:item.Description_Points,
+               description:item.Description
+              });
+
+            }
           });
           if (results.length >0) {
             return res.json(new apiresponse(200, "Items added successfully", results));
           }
 
-        //   });
+        
        
-           
+       fs.unlinkSync(filePath); // delete the file after reading    
     })
     .on('error', (err) => {
       console.error(err);
