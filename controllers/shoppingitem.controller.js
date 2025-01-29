@@ -66,6 +66,22 @@ export const addshoppingitems = asynchandler(async (req, res) => {
     console.log(results);
 });
 
+export const getshoppingitems = asynchandler(async (req, res) => {
+  const items = await ShoppingItem.find();
+  return res.json(new apiresponse(200, "Shopping items fetched successfully", items));
+});
+
+export const deleteshoppingitem=asynchandler(async(req,res)=>{
+  const {id}=req.params;
+  const item=await ShoppingItem.findOneAndDelete({id:id});
+  if(!item){
+    return res.json(new apierror(404, "No item found with the given id"));
+  }else{
+     fs.unlinkSync(path.resolve(`public/${item.imgsrc}`));
+    return res.json(new apiresponse(200, "Item deleted successfully", item));
+  }
+});
+
 export const addimages = asynchandler(async (req, res) => {
   try {
     const images = req.files;
