@@ -6,64 +6,143 @@ import { apiresponse } from "../utils/responsehandler.js";
 import { apierror } from "../utils/apierror.js";
 import path from 'path';
 import { User } from "../models/user.model.js";
+import { Category } from "../models/Category.model.js";
+
+const updateExisting = true;
 
 export const addshoppingitems = asynchandler(async (req, res) => {
   const results = [];
-  const file=req.file;
-  // Use path.resolve for correct absolute path
+  const file = req.file;
   const filePath = path.resolve(file.path);
 
   fs.createReadStream(filePath)
     .pipe(csv())
-    .on('data', (data) => results.push(data))
-    .on('end',()=>{
-        results.forEach(async (item) => {
-          const existedItem = await ShoppingItem.findOne({ id: item.Article_No });
-          if (existedItem) {
-            const updatedItem = await ShoppingItem.findOneAndUpdate({ id: item.Article_No }, {
-              main_category:item.Domain_Name,
-              sub_category:item.Department_Name,
-              item_category:item.ArticleGroup_Name,
-              discountprice:item.Discount_Price,
-              orignalprice:item.GrossSale_Price,
-              itemfullname:item.Article_Name,
-              brand:item.Brand,
-              fulldesciption:item.Full_Desciption,
-              descriptionpoints:item.Description_Points,
-              description:item.Description
-            });}
+    .on("data", (data) => results.push(data))
+    .on("end", async () => {
+      try {
+        for (const item of results) {
+          // Normalize category strings
+          const normalizedMainCategory = item.Domain_Name.trim().toLowerCase();
+          const normalizedSubCategory = item.Department_Name.trim().toLowerCase();
 
-            else{
-              const shoppingitem = await ShoppingItem.create({
-                id:item.Article_No,
-                main_category:item.Domain_Name,
-                sub_category:item.Department_Name,
-                item_category:item.ArticleGroup_Name,
-               discountprice:item.Discount_Price,
-               orignalprice:item.GrossSale_Price,
-               itemfullname:item.Article_Name,
-               brand:item.Brand,
-               fulldesciption:item.Full_Desciption,
-               descriptionpoints:item.Description_Points,
-               description:item.Description
-              });
-
+          // Find existing shopping item by custom id
+          let shoppingItemDoc = await ShoppingItem.findOne({ id: item.Article_No });
+          if (shoppingItemDoc) {
+            // Update the item if flag is set
+            if (updateExisting) {
+              shoppingItemDoc = await ShoppingItem.findOneAndUpdate(
+                { id: item.Article_No },
+                {
+                  main_category: normalizedMainCategory,
+                  sub_category: normalizedSubCategory,
+                  item_category: item.ArticleGroup_Name.trim().toLowerCase(),
+                  discountprice: item.Discount_Price,
+                  orignalprice: item.GrossSale_Price,
+                  itemfullname: item.Article_Name,
+                  brand: item.Brand,
+                  fulldesciption: item.Full_Desciption,
+                  descriptionpoints: item.Description_Points,
+                  description: item.Description,
+                },
+                { new: true }
+              );
             }
-          });
-          if (results.length >0) {
-            fs.unlinkSync(filePath); // delete the file after reading    
-            return res.json(new apiresponse(200, "Items added successfully", results));
+          } else {
+            // Create new shopping item if not found
+            shoppingItemDoc = await ShoppingItem.create({
+              id: item.Article_No,
+              main_category: normalizedMainCategory,
+              sub_category: normalizedSubCategory,
+              item_category: item.ArticleGroup_Name.trim().toLowerCase(),
+              discountprice: item.Discount_Price,
+              orignalprice: item.GrossSale_Price,
+              itemfullname: item.Article_Name,
+              brand: item.Brand,
+              fulldesciption: item.Full_Desciption,
+              descriptionpoints: item.Description_Points,
+              description: item.Description,
+            });
           }
 
-        
-       
-    })
-    .on('error', (err) => {
-      console.error(err);
-      res.status(500).send('Error reading the CSV file');
-    });
+          // Process the Category document
+          let main_cat = await Category.findOne({ main_category: normalizedMainCategory });
+          if (!main_cat) {
+            // If main category doesn't exist, create it with one subcategory containing the item
+            main_cat = await Category.create({
+              main_category: normalizedMainCategory,
+              sub_categories: [
+                {
+                  sub_category: normalizedSubCategory,
+                  items: [shoppingItemDoc._id],
+                },
+              ],
+            });
+          } else {
+            // Find all subcategories matching the normalized subcategory name
+            const matchingSubCats = main_cat.sub_categories.filter(
+              (sub) => sub.sub_category === normalizedSubCategory
+            );
 
-    console.log(results);
+            if (matchingSubCats.length === 0) {
+              // No matching subcategory: push a new one
+              main_cat.sub_categories.push({
+                sub_category: normalizedSubCategory,
+                items: [shoppingItemDoc._id],
+              });
+            } else {
+              // Use the first matching subcategory as the primary one
+              const primarySubCat = matchingSubCats[0];
+
+              // Add the item to the primary subcategory if not already present
+              if (
+                !primarySubCat.items.some(
+                  (id) => id.toString() === shoppingItemDoc._id.toString()
+                )
+              ) {
+                primarySubCat.items.push(shoppingItemDoc._id);
+              }
+
+              // If there are duplicate subcategories, merge their items into the primary one...
+              if (matchingSubCats.length > 1) {
+                for (let i = 1; i < matchingSubCats.length; i++) {
+                  const dupSubCat = matchingSubCats[i];
+                  // Merge items (as strings to ensure uniqueness), then convert back to ObjectIds
+                  primarySubCat.items = Array.from(
+                    new Set(
+                      primarySubCat.items
+                        .map((id) => id.toString())
+                        .concat(dupSubCat.items.map((id) => id.toString()))
+                    )
+                  ).map((id) => id);
+                }
+                // Remove duplicate subcategories: filter the array to keep only the primary one
+                main_cat.sub_categories = main_cat.sub_categories.filter((sub) => {
+                  if (sub.sub_category === normalizedSubCategory) {
+                    return sub._id.toString() === primarySubCat._id.toString();
+                  }
+                  return true;
+                });
+              }
+            }
+            await main_cat.save();
+          }
+        }
+
+        if (results.length > 0) {
+          fs.unlinkSync(filePath);
+          // Populate shopping item details in subcategories
+          const populatedCategories = await Category.find().populate("sub_categories.items");
+          return res.json(new apiresponse(200, "Items added successfully", populatedCategories));
+        }
+      } catch (error) {
+        console.error(error);
+        res.status(500).send("Error processing shopping items");
+      }
+    })
+    .on("error", (err) => {
+      console.error(err);
+      res.status(500).send("Error reading the CSV file");
+    });
 });
 
 export const getshoppingitems = asynchandler(async (req, res) => {
@@ -106,3 +185,16 @@ export const addimages = asynchandler(async (req, res) => {
     return res.json(new apierror(500, "Error adding images", error));
   }
 });
+
+export const getshoppingitem = asynchandler(async (req, res) => {
+  const { id } = req.body;
+  const item = await ShoppingItem
+    .findById(id)
+     
+  if (!item) {
+    return res.json(new apierror(404, "No item found with the given id"));
+  }
+  return res.json(new apiresponse(200, "Item fetched successfully", item));
+});
+
+
