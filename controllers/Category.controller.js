@@ -104,3 +104,19 @@ export const getallcategories = asynchandler(async (req, res) => {
   const categories = await Category.find().populate("sub_categories.items");
   return res.json(new apiresponse(200, "Categories fetched successfully", categories));
 });
+
+export const getcategory = asynchandler(async (req, res) => {
+  const {id}=req.params;
+  const category = await Category.findById(id).populate("sub_categories.items");
+  return res.json(new apiresponse(200, "Category fetched successfully", category)); 
+} );
+
+export const deletecategory = asynchandler(async (req, res) => {
+  const { id } = req.params;
+  const category = await Category.findOneAndDelete({ _id: id });
+  if (!category) {
+    return res.json(new apierror(404, "No category found with the given id"));
+  } else {
+    return res.json(new apiresponse(200, "Category deleted successfully", category));
+  }
+} );

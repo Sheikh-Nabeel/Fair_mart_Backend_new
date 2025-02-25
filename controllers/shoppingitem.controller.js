@@ -197,4 +197,53 @@ export const getshoppingitem = asynchandler(async (req, res) => {
   return res.json(new apiresponse(200, "Item fetched successfully", item));
 });
 
+export const addcolors = asynchandler(async (req, res) => {
+try {
+  const colors = req.files;
+  for(const color of colors){
+    const itemId = color.originalname.split('.')[0];
+    const updatedItem = await ShoppingItem.findOne({ id: itemId });
+    if (!updatedItem) {
+      console.warn(`No shopping item found with id: ${itemId}`);
+    }
+    updatedItem.colors.push(color.filename);
+    await updatedItem.save();
 
+  }
+  return res.json({ status: 200, message: "Colors added successfully" });
+} catch (error) {
+  console.error("Error adding colors:", error);
+  return res.json(new apierror(500, "Error adding colors", error));
+}
+});
+
+export const deletecolor = asynchandler(async (req, res) => {
+
+  const { id, color } = req.body;
+  const item = await ShoppingItem.findOne({
+    id: id
+  });
+  if (!item) {
+    return res.json(new apierror(404, "No item found with the given id"));
+  }
+  const index = item.colors.indexOf(color);
+  if (index > -1) {
+    item.colors.splice(index, 1);
+  }
+  await item.save();
+  return res.json(new apiresponse(200, "Color deleted successfully", item));
+}
+);
+export const deleteimage = asynchandler(async (req, res) => {
+  const { id } = req.params;
+  const item = await ShoppingItem.findOne({
+    id: id
+  });
+  if (!item) {
+    return res.json(new apierror(404, "No item found with the given id"));
+  }
+  fs.unlinkSync(path.resolve(`public/${item.imgsrc}`));
+  item.imgsrc = "";
+  await item.save();
+  return res.json(new apiresponse(200, "Image deleted successfully", item));
+});
