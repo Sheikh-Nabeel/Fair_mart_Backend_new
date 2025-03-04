@@ -5,20 +5,26 @@ import { asynchandler } from '../utils/asynchandler.js'
 
 
 
-export const verifyjwt=asynchandler(async(req,res,next)=>{
+export const verifyjwt = asynchandler(async (req, res, next) => {
     try {
-        const token=req.cookies?.accesstoken||  req.header('Authorization').replace('Bearer ','')
+        const token = req.cookies?.accesstoken || req.header('Authorization')?.replace('Bearer ', '');
+         
         if (!token) {
-            throw new apierror(401,"No token provided")
+            throw new apierror(401, "No token provided");
         }
-        const decoded=jwt.verify(token,process.env.JWT_SECRET)
-        const user=await User.findById(decoded?._id).select('-password')
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+ 
+
+        const user = await User.findById(decoded?.id).select('-password');
         if (!user) {
-            throw new apierror(404,"User not found")
+            throw new apierror(404, "User not found");
         }
-        req.user=user
-        next()
+
+        req.user = user;
+        next();
     } catch (error) {
-        throw new apierror(401,"Please authenticate")
+        console.error("JWT Error:", error.message);
+        throw new apierror(401, error.message || "Please authenticate");
     }
-})
+});

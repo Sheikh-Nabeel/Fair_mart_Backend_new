@@ -39,7 +39,20 @@ const userSchema = new Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user',
-    }
+    },
+    favorites: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'ShoppingItem',
+        },
+    ],
+    orders: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Order',
+        },
+    ],
+    
 }, { timestamps: true });
 
  
