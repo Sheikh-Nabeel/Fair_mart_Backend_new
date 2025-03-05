@@ -233,7 +233,9 @@ const deleteuser=asynchandler(async(req,res)=>{
 export const logout=asynchandler(async(req,res)=>{
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        samesite: 'none',
+        path:'/'
     }
     res.clearCookie('accesstoken',options)
     res.json({message:"logged out successfully"})
