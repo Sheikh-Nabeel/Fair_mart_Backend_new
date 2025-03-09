@@ -30,10 +30,11 @@ try {
  
 let registeruser = asynchandler(async (req, res) => {
     console.log("Register route hit");
-    const { email, password,fullname,number,loyaltycard_no } = req.body;
+    const { email, password,fullname,number,type,bussinesname,bussinesaddress } = req.body;
+    const profile=req.file
 
     // Validate input fields
-    if ( !email || !password ||!fullname || !number || !loyaltycard_no) {
+    if ( !email || !password ||!fullname || !number) {
         throw new apierror(400, "All fields are required");
     }
 
@@ -53,12 +54,15 @@ let registeruser = asynchandler(async (req, res) => {
     try {
         // Create the user without customer ID initially
         user = await User.create({
-            
+            profile:profile.filename,
             email,
             password,
             fullname,
             number:parseInt(number),
-            loyaltycard_no:loyaltycard_no
+            type,
+            bussinesname,
+            bussinesaddress
+             
         });
  
 
@@ -101,6 +105,10 @@ const login = asynchandler(async (req, res) => {
     }
 
     const user = await User.findOne({ email: email });
+    if (user && !user.verified) {
+        return res.status(401).json({ message: "Please verify your account" });
+        
+    }
 
     if (!user) {
         throw new apierror(400, "User does not exist");
@@ -239,6 +247,21 @@ export const logout=asynchandler(async(req,res)=>{
     }
     res.clearCookie('accesstoken',options)
     res.json({message:"logged out successfully"})
+})
+
+export const verifyuser=asynchandler(async(req,res)=>{
+    const {id}=req.params
+
+    const user=await User.findById(id)
+    if (user) {
+        user.verified=true
+        await user.save()
+        res.json({message:"User verified successfully"})
+    }
+    else{
+        res.json({message:"User not found"})
+    }
+    
 })
 
 export { registeruser, verifyemail, login, forgotpassword, verifyforgetpassotp, resendotp,delunverifiedusers,updateprofile,getallusers,deleteuser};

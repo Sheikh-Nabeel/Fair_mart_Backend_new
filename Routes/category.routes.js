@@ -4,7 +4,7 @@ import { verifyjwt } from "../middelwares/auth.middleware.js";
 
 const router = Router();
 
-router.route('/').get(verifyjwt,getallcategories);
+router.route('/').get(getallcategories);
 router.route('/get/:id').get(verifyjwt,getcategory)
 router.route('/delete/:id').delete(verifyjwt,deletecategory)
 

@@ -1,15 +1,16 @@
 import { Router } from "express";
-import {  deleteuser, delunverifiedusers, forgotpassword, getallusers, login ,logout,registeruser, resendotp, updateprofile, verifyemail, verifyforgetpassotp } from "../controllers/user.controller.js";
+import {  deleteuser, delunverifiedusers, forgotpassword, getallusers, login ,logout,registeruser, resendotp, updateprofile, verifyemail, verifyforgetpassotp, verifyuser } from "../controllers/user.controller.js";
 import { verifyjwt } from "../middelwares/auth.middleware.js";
-
+import {upload} from '../middelwares/multer.middelware.js'
 const router=Router()
 
-router.route('/signup').post(registeruser)
+router.route('/signup').post(upload.single('profile'),registeruser)
 router.route('/login').post(login)
 router.route('/logout').post(logout)
 router.route('/me').get(verifyjwt,(req,res)=>{
     res.json({user: req.user})
 })
+router.route('/verified/:id').post(verifyuser)
 router.route('/verifyemail').post(verifyemail)
 router.route('/forgetpassword').post(forgotpassword)
 router.route('/verifyotp').post(verifyforgetpassotp)

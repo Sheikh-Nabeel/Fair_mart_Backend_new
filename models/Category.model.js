@@ -35,12 +35,11 @@ import mongoose, { Mongoose, Schema } from "mongoose";
 // });
 
 // export const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
-
 const categorySchema = new Schema({
   main_category: {
     type: String,
     required: true,
-    lowercase: true, 
+    lowercase: true,
     trim: true
   },
   sub_categories: [
@@ -51,10 +50,20 @@ const categorySchema = new Schema({
         lowercase: true,
         trim: true
       },
-      items: [
+      item_categories: [
         {
-          type: Schema.Types.ObjectId,
-          ref: "ShoppingItem"
+          item_category: {
+            type: String,
+            required: true,
+            lowercase: true,
+            trim: true
+          },
+          items: [
+            {
+              type: Schema.Types.ObjectId,
+              ref: "ShoppingItem"
+            }
+          ]
         }
       ]
     }

@@ -7,7 +7,7 @@ import { verifyjwt } from "../middelwares/auth.middleware.js";
 const router=Router()
 
 router.route('/additem').post(verifyjwt,upload.single('csv'),addshoppingitems)
-router.route('/').get(verifyjwt,getshoppingitems)
+router.route('/').get(getshoppingitems)
 router.route('/deleteitem/:id').delete(verifyjwt,deleteshoppingitem)
 router.route('/addimages').post(verifyjwt,upload.array('images'),addimages)
 router.route('/getitem').post(verifyjwt,getshoppingitem)

@@ -9,7 +9,6 @@ import { User } from "../models/user.model.js";
 import { Category } from "../models/Category.model.js";
 
 const updateExisting = true;
-
 export const addshoppingitems = asynchandler(async (req, res) => {
   const results = [];
   const file = req.file;
@@ -24,6 +23,7 @@ export const addshoppingitems = asynchandler(async (req, res) => {
           // Normalize category strings
           const normalizedMainCategory = item.Domain_Name.trim().toLowerCase();
           const normalizedSubCategory = item.Department_Name.trim().toLowerCase();
+          const normalizedItemCategory = item.ArticleGroup_Name.trim().toLowerCase();
 
           // Find existing shopping item by custom id
           let shoppingItemDoc = await ShoppingItem.findOne({ id: item.Article_No });
@@ -35,7 +35,7 @@ export const addshoppingitems = asynchandler(async (req, res) => {
                 {
                   main_category: normalizedMainCategory,
                   sub_category: normalizedSubCategory,
-                  item_category: item.ArticleGroup_Name.trim().toLowerCase(),
+                  item_category: normalizedItemCategory,
                   discountprice: item.Discount_Price,
                   orignalprice: item.GrossSale_Price,
                   itemfullname: item.Article_Name,
@@ -53,7 +53,7 @@ export const addshoppingitems = asynchandler(async (req, res) => {
               id: item.Article_No,
               main_category: normalizedMainCategory,
               sub_category: normalizedSubCategory,
-              item_category: item.ArticleGroup_Name.trim().toLowerCase(),
+              item_category: normalizedItemCategory,
               discountprice: item.Discount_Price,
               orignalprice: item.GrossSale_Price,
               itemfullname: item.Article_Name,
@@ -67,62 +67,61 @@ export const addshoppingitems = asynchandler(async (req, res) => {
           // Process the Category document
           let main_cat = await Category.findOne({ main_category: normalizedMainCategory });
           if (!main_cat) {
-            // If main category doesn't exist, create it with one subcategory containing the item
+            // If main category doesn't exist, create it with sub and item category
             main_cat = await Category.create({
               main_category: normalizedMainCategory,
               sub_categories: [
                 {
                   sub_category: normalizedSubCategory,
-                  items: [shoppingItemDoc._id],
-                },
-              ],
+                  item_categories: [
+                    {
+                      item_category: normalizedItemCategory,
+                      items: [shoppingItemDoc._id]
+                    }
+                  ]
+                }
+              ]
             });
           } else {
-            // Find all subcategories matching the normalized subcategory name
-            const matchingSubCats = main_cat.sub_categories.filter(
+            // Find the sub-category entry
+            let subCatIndex = main_cat.sub_categories.findIndex(
               (sub) => sub.sub_category === normalizedSubCategory
             );
-
-            if (matchingSubCats.length === 0) {
-              // No matching subcategory: push a new one
+            if (subCatIndex === -1) {
+              // Create new sub-category with item category if not found
               main_cat.sub_categories.push({
                 sub_category: normalizedSubCategory,
-                items: [shoppingItemDoc._id],
+                item_categories: [
+                  {
+                    item_category: normalizedItemCategory,
+                    items: [shoppingItemDoc._id]
+                  }
+                ]
               });
             } else {
-              // Use the first matching subcategory as the primary one
-              const primarySubCat = matchingSubCats[0];
-
-              // Add the item to the primary subcategory if not already present
-              if (
-                !primarySubCat.items.some(
-                  (id) => id.toString() === shoppingItemDoc._id.toString()
-                )
-              ) {
-                primarySubCat.items.push(shoppingItemDoc._id);
-              }
-
-              // If there are duplicate subcategories, merge their items into the primary one...
-              if (matchingSubCats.length > 1) {
-                for (let i = 1; i < matchingSubCats.length; i++) {
-                  const dupSubCat = matchingSubCats[i];
-                  // Merge items (as strings to ensure uniqueness), then convert back to ObjectIds
-                  primarySubCat.items = Array.from(
-                    new Set(
-                      primarySubCat.items
-                        .map((id) => id.toString())
-                        .concat(dupSubCat.items.map((id) => id.toString()))
-                    )
-                  ).map((id) => id);
-                }
-                // Remove duplicate subcategories: filter the array to keep only the primary one
-                main_cat.sub_categories = main_cat.sub_categories.filter((sub) => {
-                  if (sub.sub_category === normalizedSubCategory) {
-                    return sub._id.toString() === primarySubCat._id.toString();
-                  }
-                  return true;
+              // Get the existing sub-category
+              const subCat = main_cat.sub_categories[subCatIndex];
+              // Find the item category within the sub-category
+              let itemCatIndex = subCat.item_categories.findIndex(
+                (ic) => ic.item_category === normalizedItemCategory
+              );
+              if (itemCatIndex === -1) {
+                // If item category doesn't exist, add a new one
+                subCat.item_categories.push({
+                  item_category: normalizedItemCategory,
+                  items: [shoppingItemDoc._id]
                 });
+              } else {
+                // Otherwise, add the shopping item to the existing item category if not already present
+                const itemCat = subCat.item_categories[itemCatIndex];
+                if (!itemCat.items.some(
+                  (id) => id.toString() === shoppingItemDoc._id.toString()
+                )) {
+                  itemCat.items.push(shoppingItemDoc._id);
+                }
               }
+              // Update the sub-category entry
+              main_cat.sub_categories[subCatIndex] = subCat;
             }
             await main_cat.save();
           }
@@ -130,8 +129,9 @@ export const addshoppingitems = asynchandler(async (req, res) => {
 
         if (results.length > 0) {
           fs.unlinkSync(filePath);
-          // Populate shopping item details in subcategories
-          const populatedCategories = await Category.find().populate("sub_categories.items");
+          // Populate shopping item details in subcategories/item_categories
+          const populatedCategories = await Category.find()
+            .populate("sub_categories.item_categories.items");
           return res.json(new apiresponse(200, "Items added successfully", populatedCategories));
         }
       } catch (error) {
@@ -147,7 +147,7 @@ export const addshoppingitems = asynchandler(async (req, res) => {
 
 export const getshoppingitems = asynchandler(async (req, res) => {
   const items = await ShoppingItem.find();
-  return res.json(new apiresponse(200, "Shopping items fetched successfully", items));
+  return res.json(new apiresponse(200, items,"Shopping items fetched successfully"));
 });
 
 export const deleteshoppingitem=asynchandler(async(req,res)=>{

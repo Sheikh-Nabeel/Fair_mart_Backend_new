@@ -7,6 +7,10 @@ const userSchema = new Schema({
         required: true,
         lowercase: true,
     },
+    profile:{
+type:String,
+
+    },
     number: {
         type: Number,
         required: true,
@@ -23,6 +27,12 @@ const userSchema = new Schema({
     },
    loyaltycard_no:{
     type:String,
+    unique:true,
+    default:0
+   },
+   loyalty_points:{
+    type:Number,
+default:0
    },
 
     verified: {
@@ -40,6 +50,20 @@ const userSchema = new Schema({
         enum: ['user', 'admin'],
         default: 'user',
     },
+    type:{
+type:String,
+enum:['normal','stock'],
+default:'normal'
+    },
+    bussinesname:{
+type:String,
+default:''
+    },
+    bussinesaddress:{
+type:String,
+default:''
+    },
+
     favorites: [
         {
             type: Schema.Types.ObjectId,

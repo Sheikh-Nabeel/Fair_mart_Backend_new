@@ -18,14 +18,7 @@ const orderSchema = new Schema({
         },
     ],
 shippingAddress: {
-        address: {
-            type: String,
-            required: true,
-        },
-        city: {
-            type: String,
-            required: true,
-        },
+        type:String
     },
     paymentMethod: {
         type: String,
