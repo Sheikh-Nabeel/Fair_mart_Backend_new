@@ -72,6 +72,20 @@ const shoppingitemSchema = new Schema({
         type:Number,
         default:1
     },
+    
+    wholesale_discountprice:{
+        type:Number,
+        default:0
+    },
+    wholesale_orignalprice:{
+        type:Number,
+        default:0
+    },
+    loyaltypoints:{
+        type:Number,
+        default:0
+    },
+    
 }, { timestamps: true });
 
 export const ShoppingItem = mongoose.model('ShoppingItem', shoppingitemSchema);

@@ -43,6 +43,9 @@ export const addshoppingitems = asynchandler(async (req, res) => {
                   fulldesciption: item.Full_Desciption,
                   descriptionpoints: item.Description_Points,
                   description: item.Description,
+                  wholesale_discountprice: item.WholeSaleDiscounted_Price,
+                  wholesale_orignalprice: item.WholeSale_Price,
+                  loyaltypoints: item.loyaltypoints_size,
                 },
                 { new: true }
               );
@@ -61,6 +64,9 @@ export const addshoppingitems = asynchandler(async (req, res) => {
               fulldesciption: item.Full_Desciption,
               descriptionpoints: item.Description_Points,
               description: item.Description,
+              wholesale_discountprice: item.WholeSaleDiscounted_Price,
+              wholesale_orignalprice: item.WholeSale_Price,
+              loyaltypoints: item.loyaltypoints_size,
             });
           }
 
