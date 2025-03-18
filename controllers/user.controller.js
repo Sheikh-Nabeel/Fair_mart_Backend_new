@@ -264,4 +264,34 @@ export const verifyuser=asynchandler(async(req,res)=>{
     
 })
 
+export const addloyaltypoints = asynchandler(async (req, res) => {
+    const { points } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (user) {
+        user.loyalty_points += points;
+        await user.save();
+        res.json({message:"Loyalty points added successfully",user:user});
+    }
+    else{
+        res.json({message:"User not found"})
+    }
+})
+
+export const redeemloyaltypoints = asynchandler(async (req, res) => {
+    const { points } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (user) {
+        user.loyalty_points -= points;
+        await user.save();
+        res.json({message:"Loyalty points redeemed successfully",user:user});
+    }
+    else{
+        res.json({message:"User not found"})
+    }
+})
+
+
+
 export { registeruser, verifyemail, login, forgotpassword, verifyforgetpassotp, resendotp,delunverifiedusers,updateprofile,getallusers,deleteuser};

@@ -253,3 +253,5 @@ export const deleteimage = asynchandler(async (req, res) => {
   await item.save();
   return res.json(new apiresponse(200, "Image deleted successfully", item));
 });
+
+ 

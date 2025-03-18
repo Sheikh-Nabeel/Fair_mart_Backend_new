@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {  deleteuser, delunverifiedusers, forgotpassword, getallusers, login ,logout,registeruser, resendotp, updateprofile, verifyemail, verifyforgetpassotp, verifyuser } from "../controllers/user.controller.js";
+import {  deleteuser,addloyaltypoints, redeemloyaltypoints,delunverifiedusers, forgotpassword, getallusers, login ,logout,registeruser, resendotp, updateprofile, verifyemail, verifyforgetpassotp, verifyuser } from "../controllers/user.controller.js";
 import { verifyjwt } from "../middelwares/auth.middleware.js";
 import {upload} from '../middelwares/multer.middelware.js'
 const router=Router()
@@ -19,6 +19,7 @@ router.route('/delunverifiedusers').delete(delunverifiedusers)
 router.route('/updateprofile').post(updateprofile)
 router.route('/getallusers').get(getallusers)
 router.route('/deleteuser').post(deleteuser)
- 
+router.route('/addloyaltypoints').post(verifyjwt, addloyaltypoints)
+router.route('/redeemloyaltypoints').post(verifyjwt, redeemloyaltypoints)
 
 export default router
