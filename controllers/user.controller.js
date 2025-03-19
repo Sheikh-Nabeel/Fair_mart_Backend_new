@@ -1,4 +1,6 @@
- import { User } from "../models/user.model.js";
+import { User } from "../models/user.model.js";
+import { ShoppingItem } from "../models/shoppingitem.model.js";
+import { Order } from "../models/orders.model.js";
 import { asynchandler } from "../utils/asynchandler.js";
 import { apiresponse } from "../utils/responsehandler.js";
 import { apierror } from "../utils/apierror.js";
@@ -292,6 +294,55 @@ export const redeemloyaltypoints = asynchandler(async (req, res) => {
     }
 })
 
+export const addtofavourites=asynchandler(async(req,res)=>{
+    const {productid}=req.body
+    const product=await ShoppingItem.findById(productid)
+    if (!product) {
+        throw new apierror(404, "Product not found");
+    }
+
+    const user=await User.findById(req.user.id)
+    user.favorites.push(productid)
+    await user.save()
+    res.json({message:"Product added to favourites",user:user})
+
+})
+
+export const removefromfavourites=asynchandler(async(req,res)=>{
+    const {productid}=req.body
+    const product=await ShoppingItem.findById(productid)
+    const user=await User.findById(req.user.id)
+    if (!product) {
+        throw new apierror(404, "Product not found");
+    }
+    user.favorites=user.favorites.filter(id=>id.toString()!==productid)
+    await user.save()
+    res.json({message:"Product removed from favorites",user:user})
+})
+
+export const getfavourites=asynchandler(async(req,res)=>{
+    const user=await User.findById(req.user.id)
+    const favorites=await ShoppingItem.find({_id:{$in:user.favorites}})
+
+    res.json({favorites:favorites})
+})
+
+export const addtoorderhistory=asynchandler(async(req,res)=>{
+    const {orderid}=req.body
+    const order=await Order.findById(orderid)
+    if (!order) {
+        throw new apierror(404, "Order not found");
+    }
+    user.orderhistory.push(orderid)
+    await user.save()
+    res.json({message:"Order added to order history",user:user})
+})
+
+export const getorderhistory=asynchandler(async(req,res)=>{
+    const user=await User.findById(req.user.id)
+    const orderhistory=await Order.find({_id:{$in:user.orderhistory}}).populate('products.product')
+    res.json({orderhistory:orderhistory})
+})
 
 
 export { registeruser, verifyemail, login, forgotpassword, verifyforgetpassotp, resendotp,delunverifiedusers,updateprofile,getallusers,deleteuser};

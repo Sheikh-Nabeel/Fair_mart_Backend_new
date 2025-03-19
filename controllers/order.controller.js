@@ -17,6 +17,7 @@ export const createOrder = asynchandler(async (req, res) => {
         shippingcost,
         total,
     });
+    await User.findByIdAndUpdate(user, { $push: { orders: order._id } });
     res.status(201).json(new apiresponse(true, order));
 });
 
@@ -44,11 +45,12 @@ export const updateOrder = asynchandler(async (req, res) => {
 
 export const deleteOrder = asynchandler(async (req, res) => {
     let order = await Order.findById(req.params.id);
+    
     if (!order) {
         throw new apierror(404, "Order not found");
     }
     await Order.findByIdAndDelete(req.params.id);
-
+    await User.findByIdAndUpdate(order.user, { $pull: { orders: order._id } });
     res.status(200).json(new apiresponse(true, "Order deleted successfully"));
 });
 

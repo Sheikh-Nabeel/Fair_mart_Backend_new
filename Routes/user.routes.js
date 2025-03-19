@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {  deleteuser,addloyaltypoints, redeemloyaltypoints,delunverifiedusers, forgotpassword, getallusers, login ,logout,registeruser, resendotp, updateprofile, verifyemail, verifyforgetpassotp, verifyuser } from "../controllers/user.controller.js";
+import {  deleteuser,addloyaltypoints, redeemloyaltypoints,delunverifiedusers, forgotpassword, getallusers, login ,logout,registeruser, resendotp, updateprofile, verifyemail, verifyforgetpassotp, verifyuser, addtofavourites, removefromfavourites, getfavourites, addtoorderhistory, getorderhistory } from "../controllers/user.controller.js";
 import { verifyjwt } from "../middelwares/auth.middleware.js";
 import {upload} from '../middelwares/multer.middelware.js'
 const router=Router()
@@ -21,5 +21,10 @@ router.route('/getallusers').get(getallusers)
 router.route('/deleteuser').post(deleteuser)
 router.route('/addloyaltypoints').post(verifyjwt, addloyaltypoints)
 router.route('/redeemloyaltypoints').post(verifyjwt, redeemloyaltypoints)
+router.route('/addtofavourites').post(verifyjwt, addtofavourites)
+router.route('/removefromfavourites').post(verifyjwt, removefromfavourites)
+router.route('/getfavourites').get(verifyjwt, getfavourites)
+router.route('/addtoorderhistory').post(verifyjwt, addtoorderhistory)
+router.route('/getorderhistory').get(verifyjwt, getorderhistory)
 
 export default router

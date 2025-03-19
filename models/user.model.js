@@ -76,6 +76,12 @@ default:''
             ref: 'Order',
         },
     ],
+    orderhistory: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Order',
+        },
+    ]
     
 }, { timestamps: true });
 
