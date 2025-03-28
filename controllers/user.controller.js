@@ -32,7 +32,7 @@ try {
  
 let registeruser = asynchandler(async (req, res) => {
     console.log("Register route hit");
-    const { email, password,fullname,number,type,bussinesname,bussinesaddress } = req.body;
+    const { email, password,fullname,number,type,bussinesname,bussinesaddress,verified } = req.body;
     const profile=req.file
 
     // Validate input fields
@@ -63,7 +63,8 @@ let registeruser = asynchandler(async (req, res) => {
             number:parseInt(number),
             type,
             bussinesname,
-            bussinesaddress
+            bussinesaddress,
+            verified
              
         });
  
@@ -344,5 +345,6 @@ export const getorderhistory=asynchandler(async(req,res)=>{
     res.json({orderhistory:orderhistory})
 })
 
+ 
 
 export { registeruser, verifyemail, login, forgotpassword, verifyforgetpassotp, resendotp,delunverifiedusers,updateprofile,getallusers,deleteuser};
