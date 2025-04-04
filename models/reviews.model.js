@@ -5,6 +5,11 @@ const reviewsSchema = new Schema({
         type:String,
         required:true
     },
+    userId:{
+        type:String,
+        ref:"User",
+        required:true
+    },
     email:{
         type:String,
         required:true

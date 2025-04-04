@@ -9,8 +9,9 @@ export const createReview = async (req,res) => {
     }
     let email = user.email; 
     let name = user.fullname;
+    let userId = user.id;
     try {
-        const createtedReview = await Reviews.create({review,rating,email,name});
+        const createtedReview = await Reviews.create({review,rating,email,name,userId});
         res.status(201).json(createtedReview);
     } catch (error) {
         res.status(500).json({message:error.message});
@@ -19,7 +20,7 @@ export const createReview = async (req,res) => {
 
 export const getReviews = async (req,res) => {
     try {
-        const reviews = await Reviews.find();
+        const reviews = await Reviews.find().populate("userId","-password");
         res.status(200).json(reviews);
     } catch (error) {
         res.status(500).json({message:error.message});
@@ -29,7 +30,7 @@ export const getReviews = async (req,res) => {
 export const getReviewById = async (req,res) => {
     const {id} = req.params;
     try {
-        const review = await Reviews.findById(id);
+        const review = await Reviews.findById(id).populate("userId","-password");
         if(!review){
             return res.status(404).json({message:"Review not found"});
         }
