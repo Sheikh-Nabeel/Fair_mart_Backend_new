@@ -9,6 +9,9 @@ import shippingrouter from './Routes/shipping.routes.js'
 import eventrouter from './Routes/event.routes.js'
 import aboutrouter from './Routes/about.routes.js'
 import achievementrouter from './Routes/achievement.routes.js'
+import bannerrouter from './Routes/banner.routes.js'
+import salesrouter from './Routes/sales.routes.js'
+import reviewsrouter from './Routes/reviews.routes.js'
 const app=express()
 app.use(express.static('public'))
 
@@ -26,7 +29,9 @@ app.use('/api/v1/shipping',shippingrouter)
 app.use('/api/v1/event',eventrouter)
 app.use('/api/v1/about',aboutrouter)
 app.use('/api/v1/achievement',achievementrouter)
- 
+app.use('/api/v1/banner',bannerrouter)
+app.use('/api/v1/sales',salesrouter)
+app.use('/api/v1/reviews',reviewsrouter)
  
 
 
