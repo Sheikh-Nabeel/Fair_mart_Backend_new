@@ -4,6 +4,9 @@ import { Order } from "../models/orders.model.js";
 import { asynchandler } from "../utils/asynchandler.js";
 import { apiresponse } from "../utils/responsehandler.js";
 import { apierror } from "../utils/apierror.js";
+ 
+import path from "path";
+import fs from "fs";
 // import { sendemailverification } from "../middelwares/Email.js";
  
 const delunverifiedusers=asynchandler(async(req,res)=>{
@@ -192,38 +195,92 @@ const verifyforgetpassotp = asynchandler(async (req, res) => {
     }
 });
 
-const updateprofile=asynchandler(async(req,res)=>{
-    const { id,name, email, password, number } = req.body;
-
- 
-
- 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-
-    let user;
-    try {
-        // Create the user without customer ID initially
-        user = await User.findByIdAndUpdate(id,{
-            name,
-            email,
-            password,
-            number,
-            verificationcode: verificationCode,
-        },{new:true});
- 
-
-       
-
-        
-        await sendemailverification(user.email, user.verificationcode);
-
-        return res.status(200).json({ message: "Please verify your email", otp: user.verificationcode });
-    } catch (error) {
-        console.error("Error creating user:", error);
-        return res.status(500).json({ message: "Error creating user", error: error.message });
+const updateprofile = asynchandler(async(req, res) => {
+    const {  fullname, email, number, type, bussinesname, bussinesaddress,password } = req.body;
+    const profile = req.file;
+    
+    // Find the user first
+    const user = await User.findById(req.user.id);
+    if (!user) {
+        return res.status(404).json({ 
+            success: false,
+            message: "User not found" 
+        });
     }
-})
+    
+    // Create update data object with only the fields that are provided
+    let updateData = {};
+    
+    // Only add fields to updateData if they are provided in the request
+    if (fullname) updateData.fullname = fullname;
+    if (email) updateData.email = email;
+    if (number) updateData.number = parseInt(number);
+    if (type) updateData.type = type;
+    if (bussinesname) updateData.bussinesname = bussinesname;
+    if (bussinesaddress) updateData.bussinesaddress = bussinesaddress;
+    if (password) updateData.password = password;
+    
+    // Handle profile image update if a new image is provided
+    if (profile) {
+        // Delete the old image if it exists
+        if (user.profile) {
+            const oldImagePath = path.join(process.cwd(), "public", user.profile);
+            try {
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                    console.log("Old profile image deleted successfully:", oldImagePath);
+                } else {
+                    console.log("Old profile image file not found:", oldImagePath);
+                }
+            } catch (error) {
+                console.error("Error deleting old profile image:", error);
+            }
+        }           
+        updateData.profile = profile.filename;
+    }
+    
+    // If no fields were provided to update, return the existing user
+    if (Object.keys(updateData).length === 0 && !profile) {
+        return res.status(200).json({ 
+            success: true,
+            message: "No changes provided",
+            user: user 
+        });
+    }
+    
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id, 
+            updateData, 
+            { new: true }
+        ).select("-password");
+        
+        return res.status(200).json({ 
+            success: true,
+            message: "Profile updated successfully", 
+            user: updatedUser 
+        });
+    } catch (error) {
+        // If database operation fails and a new image was uploaded, delete it
+        if (profile) {
+            const imagePath = path.join(process.cwd(), "public", profile.filename);
+            try {
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                    console.log("New profile image deleted after failed update:", imagePath);
+                }
+            } catch (deleteError) {
+                console.error("Error deleting new profile image after failed update:", deleteError);
+            }
+        }
+        
+        return res.status(500).json({ 
+            success: false,
+            message: "Error updating profile", 
+            error: error.message 
+        });
+    }
+});
 
 const getallusers=asynchandler(async(req,res)=>{
 const users= await User.find({})
