@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { createEvent, getEvents, getEventById, updateEvent, deleteEvent } from "../controllers/event.controller.js";
-import { upload } from "../middelwares/multer.middelware.js";
+import { newupload } from "../middelwares/multer.middelware2.js";
 
 const router = Router();
 
-router.post("/",upload.single("image"),createEvent);
+router.post("/",newupload.single("image"),createEvent);
 router.get("/",getEvents);
 router.get("/:id",getEventById);
-router.put("/:id",upload.single("image"),updateEvent);
+router.put("/:id",newupload.single("image"),updateEvent);
 router.delete("/:id",deleteEvent);
 
 export default router;

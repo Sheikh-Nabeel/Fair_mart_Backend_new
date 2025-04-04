@@ -1,8 +1,9 @@
-import { Event } from "../models/event.model.js";
+import { Achievement } from "../models/achievement.model.js";
 import fs from "fs";
 import path from "path";
-export const createEvent = async (req,res) => {
-    const {name,description,startDate,endDate,location} = req.body;
+
+export const createAchievement = async (req,res) => {
+    const {title,description} = req.body;
     
     // Check if an image was uploaded
     if (!req.file) {
@@ -10,19 +11,16 @@ export const createEvent = async (req,res) => {
     }
     
     try {
-        const event = await Event.create({
-            name,
+        const achievement = await Achievement.create({
+            title,
             description,
-            startDate,
-            endDate,
-            location,
             image: req.file.filename
         });
-        res.status(201).json(event);
+        res.status(201).json(achievement);
     } catch (error) {
         // If database operation fails, delete the uploaded image
         if (req.file) {
-            const imagePath = path.join(process.cwd(), "public",req.file.filename);
+            const imagePath = path.join(process.cwd(), "public",  req.file.filename);
             try {
                 if(fs.existsSync(imagePath)) {
                     fs.unlinkSync(imagePath);
@@ -36,43 +34,38 @@ export const createEvent = async (req,res) => {
     }
 }
 
-export const getEvents = async (req,res) => {
+export const getAchievement = async (req,res) => {
     try {
-        const events = await Event.find();
-        res.status(200).json(events);
+        const achievement = await Achievement.find();
+        res.status(200).json(achievement);
     } catch (error) {
         res.status(500).json({message:error.message});
     }
 }
 
-export const getEventById = async (req,res) => {
+export const getAchievementById = async (req,res) => {
     const {id} = req.params;
     try {
-        const event = await Event.findById(id);
-        res.status(200).json(event);
+        const achievement = await Achievement.findById(id);
+        res.status(200).json(achievement);
     } catch (error) {
         res.status(500).json({message:error.message});
     }
-    
-    
 }
 
-export const updateEvent = async (req,res) => {
+export const updateAchievement = async (req,res) => {
     const {id} = req.params;
-    const event = await Event.findById(id);
-    if(!event){
-        return res.status(404).json({message:"Event not found"});
+    const achievement = await Achievement.findById(id);
+    if(!achievement){
+        return res.status(404).json({message:"Achievement not found"});
     }
     
     // Create updateData object with only the fields that are provided
     let updateData = {};
     
     // Only add fields to updateData if they are provided in the request
-    if(req.body.name) updateData.name = req.body.name;
+    if(req.body.title) updateData.title = req.body.title;
     if(req.body.description) updateData.description = req.body.description;
-    if(req.body.startDate) updateData.startDate = req.body.startDate;
-    if(req.body.endDate) updateData.endDate = req.body.endDate;
-    if(req.body.location) updateData.location = req.body.location;
     
     // Store the new image filename if a new image is uploaded
     let newImageFilename = null;
@@ -82,8 +75,8 @@ export const updateEvent = async (req,res) => {
         newImageFilename = req.file.filename;
         
         // Delete the old image if it exists
-        if(event.image) {
-            const oldImagePath = path.join(process.cwd(), "public", event.image);
+        if(achievement.image) {
+            const oldImagePath = path.join(process.cwd(), "public", achievement.image);
             try {
                 if(fs.existsSync(oldImagePath)) {
                     fs.unlinkSync(oldImagePath);
@@ -98,18 +91,18 @@ export const updateEvent = async (req,res) => {
         updateData.image = newImageFilename;
     }
 
-    // If no fields were provided to update, return the existing event
+    // If no fields were provided to update, return the existing achievement
     if(Object.keys(updateData).length === 0 && !req.file) {
-        return res.status(200).json(event);
+        return res.status(200).json(achievement);
     }
 
     try {
-        const updatedEvent = await Event.findByIdAndUpdate(id, updateData, {new:true});
-        res.status(200).json(updatedEvent);
+        const updatedAchievement = await Achievement.findByIdAndUpdate(id, updateData, {new:true});
+        res.status(200).json(updatedAchievement);
     } catch (error) {
         // If database operation fails and a new image was uploaded, delete it
         if (newImageFilename) {
-            const imagePath = path.join(process.cwd(), "public",  newImageFilename);
+            const imagePath = path.join(process.cwd(), "public", newImageFilename);
             try {
                 if(fs.existsSync(imagePath)) {
                     fs.unlinkSync(imagePath);
@@ -123,17 +116,17 @@ export const updateEvent = async (req,res) => {
     }
 }
 
-export const deleteEvent = async (req,res) => {
+export const deleteAchievement = async (req,res) => {
     const {id} = req.params;
     try {
-        const event = await Event.findById(id);
-        if(!event) {
-            return res.status(404).json({message:"Event not found"});
+        const achievement = await Achievement.findById(id);
+        if(!achievement) {
+            return res.status(404).json({message:"Achievement not found"});
         }
         
         // Delete the image file if it exists
-        if(event.image) {
-            const imagePath = path.join(process.cwd(), "public", event.image);
+        if(achievement.image) {
+            const imagePath = path.join(process.cwd(), "public", achievement.image);
             try {
                 if(fs.existsSync(imagePath)) {
                     fs.unlinkSync(imagePath);
@@ -146,11 +139,10 @@ export const deleteEvent = async (req,res) => {
             }
         }
         
-        // Delete the event record
-        await Event.findByIdAndDelete(id);
-        res.status(200).json({message:"Event deleted successfully"});
+        // Delete the achievement record
+        await Achievement.findByIdAndDelete(id);
+        res.status(200).json({message:"Achievement deleted successfully"});
     } catch (error) {
         res.status(500).json({message:error.message});
     }
 }
-

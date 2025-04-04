@@ -7,7 +7,8 @@ import categoryrouter from './Routes/category.routes.js'
 import orderrouter from './Routes/order.routes.js'
 import shippingrouter from './Routes/shipping.routes.js'
 import eventrouter from './Routes/event.routes.js'
-
+import aboutrouter from './Routes/about.routes.js'
+import achievementrouter from './Routes/achievement.routes.js'
 const app=express()
 app.use(express.static('public'))
 
@@ -23,6 +24,8 @@ app.use('/api/v1/category',categoryrouter)
 app.use('/api/v1/order',orderrouter)
 app.use('/api/v1/shipping',shippingrouter)
 app.use('/api/v1/event',eventrouter)
+app.use('/api/v1/about',aboutrouter)
+app.use('/api/v1/achievement',achievementrouter)
  
  
 
