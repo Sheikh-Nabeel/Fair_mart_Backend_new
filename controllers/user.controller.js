@@ -196,11 +196,22 @@ const verifyforgetpassotp = asynchandler(async (req, res) => {
 });
 
 const updateprofile = asynchandler(async(req, res) => {
-    const {  fullname, email, number, type, bussinesname, bussinesaddress,password } = req.body;
+    const { id, fullname, email, number, type, bussinesname, bussinesaddress, password } = req.body;
     const profile = req.file;
     
+    // Determine which user ID to use
+    let userId;
+    
+    // If an ID is provided in the request body and the current user is an admin, use that ID
+    if (id) {
+        userId = id;
+    } else {
+        // Otherwise, use the ID of the currently logged-in user
+        userId = req.user.id;
+    }
+    
     // Find the user first
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(userId);
     if (!user) {
         return res.status(404).json({ 
             success: false,
@@ -235,7 +246,7 @@ const updateprofile = asynchandler(async(req, res) => {
             } catch (error) {
                 console.error("Error deleting old profile image:", error);
             }
-        }           
+        }
         updateData.profile = profile.filename;
     }
     
@@ -250,7 +261,7 @@ const updateprofile = asynchandler(async(req, res) => {
     
     try {
         const updatedUser = await User.findByIdAndUpdate(
-            req.user.id, 
+            userId, 
             updateData, 
             { new: true }
         ).select("-password");
