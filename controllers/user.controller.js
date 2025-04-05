@@ -41,12 +41,36 @@ let registeruser = asynchandler(async (req, res) => {
 
     // Validate input fields
     if ( !email || !password ||!fullname || !number) {
+        // If profile image was uploaded but validation failed, delete it
+        if (profile) {
+            const imagePath = path.join(process.cwd(), "public", profile.filename);
+            try {
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                    console.log("Profile image deleted after validation failure:", imagePath);
+                }
+            } catch (deleteError) {
+                console.error("Error deleting profile image after validation failure:", deleteError);
+            }
+        }
         throw new apierror(400, "All fields are required");
     }
 
     // Check for existing email
     const existedEmail = await User.findOne({ email });
     if (existedEmail) {
+        // If profile image was uploaded but email exists, delete it
+        if (profile) {
+            const imagePath = path.join(process.cwd(), "public", profile.filename);
+            try {
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                    console.log("Profile image deleted after email exists check:", imagePath);
+                }
+            } catch (deleteError) {
+                console.error("Error deleting profile image after email exists check:", deleteError);
+            }
+        }
         if (!existedEmail.verified) {
             return res.status(401).json({ message: "Email already exists and user is not verified" });
         } else {
@@ -72,11 +96,7 @@ let registeruser = asynchandler(async (req, res) => {
             role
              
         });
- 
 
-       
-
-        
         // await sendemailverification(user.email, user.verificationcode);
         await user.save();
         let created_user=await User.findById(user._id).select('-password')
@@ -84,6 +104,20 @@ let registeruser = asynchandler(async (req, res) => {
         return res.status(200).json({ message: "Signed up successfully", user:created_user });
     } catch (error) {
         console.error("Error creating user:", error);
+        
+        // If profile image was uploaded but user creation failed, delete it
+        if (profile) {
+            const imagePath = path.join(process.cwd(), "public", profile.filename);
+            try {
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                    console.log("Profile image deleted after failed user creation:", imagePath);
+                }
+            } catch (deleteError) {
+                console.error("Error deleting profile image after failed user creation:", deleteError);
+            }
+        }
+        
         return res.status(500).json({ message: "Error creating user", error: error.message });
     }
 });
@@ -217,12 +251,45 @@ res.json({users:users})
 const deleteuser=asynchandler(async(req,res)=>{
     const {id}=req.body
 
-    const deleteduser=await User.findByIdAndDelete(id)
+    // Find the user first to get the profile image path
+    const user = await User.findById(id);
+    
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: "User not found"
+        });
+    }
+    
+    // Delete the profile image if it exists
+    if (user.profile) {
+        const imagePath = path.join(process.cwd(), "public", user.profile);
+        try {
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+                console.log("Profile image deleted successfully:", imagePath);
+            } else {
+                console.log("Profile image file not found:", imagePath);
+            }
+        } catch (error) {
+            console.error("Error deleting profile image:", error);
+        }
+    }
+    
+    // Delete the user record
+    const deleteduser = await User.findByIdAndDelete(id);
 
     if (deleteduser) {
-        res.json({mesaage:"user deleted Successfully",
-            user:deleteduser
-        })
+        return res.status(200).json({
+            success: true,
+            message: "User deleted successfully",
+            user: deleteduser
+        });
+    } else {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete user"
+        });
     }
 })
 export const logout=asynchandler(async(req,res)=>{
