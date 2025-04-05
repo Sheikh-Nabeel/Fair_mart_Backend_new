@@ -7,6 +7,7 @@ import { apierror } from "../utils/apierror.js";
  
 import path from "path";
 import fs from "fs";
+ 
 // import { sendemailverification } from "../middelwares/Email.js";
  
 const delunverifiedusers=asynchandler(async(req,res)=>{
@@ -35,7 +36,7 @@ try {
  
 let registeruser = asynchandler(async (req, res) => {
     console.log("Register route hit");
-    const { email, password,fullname,number,type,bussinesname,bussinesaddress,verified } = req.body;
+    const { email, password,fullname,number,type,bussinesname,bussinesaddress,verified,role } = req.body;
     const profile=req.file
 
     // Validate input fields
@@ -67,7 +68,8 @@ let registeruser = asynchandler(async (req, res) => {
             type,
             bussinesname,
             bussinesaddress,
-            verified
+            verified,
+            role
              
         });
  
@@ -103,98 +105,7 @@ const resendotp = asynchandler(async (req, res) => {
     }
 });
 
-const login = asynchandler(async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email) {
-        throw new apierror(400, "Email is required");
-    }
-
-    const user = await User.findOne({ email: email });
-    if (user && !user.verified) {
-        return res.status(401).json({ message: "Please verify your account" });
-        
-    }
-
-    if (!user) {
-        throw new apierror(400, "User does not exist");
-    }
-
-    const isPasswordValid = await user.isPasswordCorrect(password);
-
-    if (!isPasswordValid) {
-        throw new apierror(404, "Password is not valid");
-    }
-const options={
-    httpOnly:true,
-    secure:true
-}
-    const {accesstoken}=await generateaccestoken(user._id)
-
-    const loggedInUser = await User.findById(user._id).select("-password");
-    if (loggedInUser) {
-        return res
-        .status(200)
-        .cookie('accesstoken',accesstoken,options)
-        .json(new apiresponse(200, {loggedInUser,token:accesstoken}));
-    } else {
-        return res.json({ message: "User is not verified" });
-    }
-});
-
-const verifyemail = asynchandler(async (req, res) => {
-    try {
-        const { code } = req.body;
-        const user = await User.findOne({ verificationcode: code });
-        if (!user) {
-            throw new apierror(404, "Invalid or expired code");
-        } else {
-            user.verified = true;
-            user.verificationcode = undefined; // Clear the verification code
-            await user.save();
-            const verifiedUser = await User.findById(user._id).select('-password');
-            return res.json(new apiresponse(200, verifiedUser, "Verified user"));
-        }
-    } catch (error) {
-        console.error("Verification code error:", error);
-        return res.status(500).json({ message: "Error verifying code" });
-    }
-});
-
  
- 
-
-const forgotpassword = asynchandler(async (req, res) => {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email: email });
-    if (user) {
-        const verificationcode = Math.floor(100000 + Math.random() * 900000).toString();
-        user.forgetpasswordotp = verificationcode;
-        await user.save();
-        await sendemailverification(user.email, user.forgetpasswordotp);
-
-        res.status(200).json({ message: "Please verify the OTP we have sent to your email",otp:user.forgetpasswordotp });
-    } else {
-        res.status(404).json({ message: "User not found" });
-    }
-});
-
-const verifyforgetpassotp = asynchandler(async (req, res) => {
-    const { otp, newpassword } = req.body;
-
-    const user = await User.findOne({ forgetpasswordotp: otp });
-
-    if (user) {
-        user.password = newpassword;
-        await user.save();
-
-        res.status(200).json({ message: "Password updated successfully" });
-    } else {
-        res.status(401).json({ message: "Please provide a valid OTP" });
-    }
-});
-
 const updateprofile = asynchandler(async(req, res) => {
     const { id, fullname, email, number, type, bussinesname, bussinesaddress, password } = req.body;
     const profile = req.file;
@@ -219,18 +130,6 @@ const updateprofile = asynchandler(async(req, res) => {
         });
     }
     
-    // Create update data object with only the fields that are provided
-    let updateData = {};
-    
-    // Only add fields to updateData if they are provided in the request
-    if (fullname) updateData.fullname = fullname;
-    if (email) updateData.email = email;
-    if (number) updateData.number = parseInt(number);
-    if (type) updateData.type = type;
-    if (bussinesname) updateData.bussinesname = bussinesname;
-    if (bussinesaddress) updateData.bussinesaddress = bussinesaddress;
-    if (password) updateData.password = password;
-    
     // Handle profile image update if a new image is provided
     if (profile) {
         // Delete the old image if it exists
@@ -247,11 +146,21 @@ const updateprofile = asynchandler(async(req, res) => {
                 console.error("Error deleting old profile image:", error);
             }
         }
-        updateData.profile = profile.filename;
+        user.profile = profile.filename;
     }
     
-    // If no fields were provided to update, return the existing user
-    if (Object.keys(updateData).length === 0 && !profile) {
+    // Update user fields if provided
+    if (fullname) user.fullname = fullname;
+    if (email) user.email = email;
+    if (number) user.number = parseInt(number);
+    if (type) user.type = type;
+    if (bussinesname) user.bussinesname = bussinesname;
+    if (bussinesaddress) user.bussinesaddress = bussinesaddress;
+    
+    // Check if any fields were updated
+    const hasUpdates = fullname || email || number || type || bussinesname || bussinesaddress || profile || password;
+    
+    if (!hasUpdates) {
         return res.status(200).json({ 
             success: true,
             message: "No changes provided",
@@ -260,11 +169,18 @@ const updateprofile = asynchandler(async(req, res) => {
     }
     
     try {
-        const updatedUser = await User.findByIdAndUpdate(
-            userId, 
-            updateData, 
-            { new: true }
-        ).select("-password");
+        // If password is being updated, set it directly on the user object
+        // The pre-save middleware will handle the hashing
+        if (password) {
+            console.log("Updating password for user:", userId);
+            user.password = password;
+        }
+        
+        // Save the user - this will trigger the pre-save middleware for password hashing
+        await user.save();
+        
+        // Fetch the updated user without password
+        const updatedUser = await User.findById(userId).select("-password");
         
         return res.status(200).json({ 
             success: true,
@@ -413,6 +329,71 @@ export const getorderhistory=asynchandler(async(req,res)=>{
     res.json({orderhistory:orderhistory})
 })
 
- 
+const login = asynchandler(async (req, res) => {
+    const { email, password } = req.body;
 
-export { registeruser, verifyemail, login, forgotpassword, verifyforgetpassotp, resendotp,delunverifiedusers,updateprofile,getallusers,deleteuser};
+    // Check if email and password are provided
+    if (!email || !password) {
+        return res.status(400).json({
+            success: false,
+            message: !email ? "Email is required" : "Password is required"
+        });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email });
+    
+    // Check if user exists
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: "User does not exist"
+        });
+    }
+    
+    // Check if user is verified - only require verification for stock users
+    if (user.type === 'stock' && !user.verified) {
+        return res.status(401).json({
+            success: false,
+            message: "Stock users must verify their account before logging in"
+        });
+    }
+
+    // Validate password
+    const isPasswordValid = await user.isPasswordCorrect(password);
+    console.log("Password validation result:", isPasswordValid);
+    
+    if (!isPasswordValid) {
+        return res.status(401).json({
+            success: false,
+            message: "Password is not valid"
+        });
+    }
+
+    // Generate access token
+    const { accesstoken } = await generateaccestoken(user._id);
+    
+    // Set cookie options
+    const options = {
+        httpOnly: true,
+        secure: true
+    };
+
+    // Get user data without password
+    const loggedInUser = await User.findById(user._id).select("-password");
+    
+    // Return success response with token and user data
+    return res
+        .status(200)
+        .cookie('accesstoken', accesstoken, options)
+        .json({
+            success: true,
+            message: "Login successful",
+            data: {
+                user: loggedInUser,
+                token: accesstoken
+            }
+        });
+});
+
+export { registeruser,   login,     resendotp,delunverifiedusers,updateprofile,getallusers,deleteuser};

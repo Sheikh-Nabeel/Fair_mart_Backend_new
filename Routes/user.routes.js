@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {  deleteuser,addloyaltypoints, redeemloyaltypoints,delunverifiedusers, forgotpassword, getallusers, login ,logout,registeruser, resendotp, updateprofile, verifyemail, verifyforgetpassotp, verifyuser, addtofavourites, removefromfavourites, getfavourites, addtoorderhistory, getorderhistory } from "../controllers/user.controller.js";
+import {  deleteuser,addloyaltypoints, redeemloyaltypoints,delunverifiedusers,   getallusers, login ,logout,registeruser, resendotp, updateprofile,     verifyuser, addtofavourites, removefromfavourites, getfavourites, addtoorderhistory, getorderhistory } from "../controllers/user.controller.js";
 import { verifyjwt } from "../middelwares/auth.middleware.js";
 import {newupload} from '../middelwares/multer.middelware2.js'
 const router=Router()
@@ -11,9 +11,7 @@ router.route('/me').get(verifyjwt,(req,res)=>{
     res.json({user: req.user})
 })
 router.route('/verified/:id').post(verifyuser)
-router.route('/verifyemail').post(verifyemail)
-router.route('/forgetpassword').post(forgotpassword)
-router.route('/verifyotp').post(verifyforgetpassotp)
+ 
 router.route('/resendotp').post(resendotp)
 router.route('/delunverifiedusers').delete(delunverifiedusers)
 router.route('/updateprofile').post(verifyjwt,newupload.single('profile'),updateprofile)
