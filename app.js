@@ -16,7 +16,27 @@ const app=express()
 app.use(express.static('public'))
 
 app.use(express.json())
-app.use(cors({origin:process.env.CORS_ORIGIN,credentials:true}))
+const allowedOrigins = [process.env.CORS_ORIGIN, process.env.DASHBOARD_URL];
+
+app.use(
+    cors({
+        origin: function (origin, callback) {
+            // Allow requests with no origin (like mobile apps or Postman)
+            if (!origin) return callback(null, true);
+
+            if (!allowedOrigins.includes(origin)) {
+                const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+                return callback(new Error(msg), false);
+            }
+
+            return callback(null, true);
+        },
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+        exposedHeaders: ['Set-Cookie']
+    })
+);
 app.use(express.urlencoded({extended:true}))
 app.use(cookieParser())
 
