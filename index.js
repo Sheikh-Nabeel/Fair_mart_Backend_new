@@ -4,13 +4,11 @@ import { connectdb } from './db/dbconnection.js'
 
 let port =process.env.PORT || 8000
 
-dotenv.config({
-    path:"/.env"
-})
+dotenv.config()
 
 connectdb()
 .then(()=>{
-    app.listen(port,()=>{
+    app.listen(port,'0.0.0.0',()=>{
         console.log(`Server is running at Port : ${port}`)
     })
 }).catch((err)=>{
