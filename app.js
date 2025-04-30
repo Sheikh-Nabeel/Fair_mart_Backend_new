@@ -20,14 +20,16 @@ app.use(express.static('public'));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
-console.log(process.env);  // Log all environment variables
+console.log(process.env);  // Log all environment variables (optional)
 
-// Debugging check: Print out the loaded CORS-related environment variables
-console.log("CORS_ORIGIN:", process.env.CORS_ORIGIN);
-console.log("DASHBOARD_URL:", process.env.DASHBOARD_URL);
+// Hardcode CORS URLs
+const allowedOrigins = [
+  'https://24sevenfairmart.com',        // CORS_ORIGIN
+  'https://dashboard.24sevenfairmart.com'  // DASHBOARD_URL
+];
 
-// Create allowedOrigins list with filter to remove falsy values
-const allowedOrigins = [process.env.CORS_ORIGIN, process.env.DASHBOARD_URL].filter(Boolean);
+// Debugging check: Print out the allowed origins
+console.log("Allowed Origins:", allowedOrigins);
 
 // CORS Configuration with additional debugging
 app.use(
