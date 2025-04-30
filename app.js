@@ -16,7 +16,7 @@ const app=express()
 app.use(express.static('public'))
 
 app.use(express.json())
-const allowedOrigins = [process.env.CORS_ORIGIN, process.env.DASHBOARD_URL];
+const allowedOrigins = ["https://24sevenfairmart.com", "https://dashboard.24sevenfairmart.com"];
 
 app.use(
     cors({
