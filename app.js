@@ -1,5 +1,5 @@
 import express from "express";
-import cors from 'cors';
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import userrouter from './Routes/user.routes.js';
 import shoppingitems from './Routes/shoppingitem.routes.js';
@@ -21,28 +21,40 @@ app.use(express.static('public'));
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-// Ensure you only have one allowed origin from env
-const allowedOrigins = [process.env.CORS_ORIGIN, process.env.DASHBOARD_URL].filter(Boolean); // Avoid null/undefined
+// Debugging check: Print out the loaded CORS-related environment variables
+console.log("CORS_ORIGIN:", process.env.CORS_ORIGIN);
+console.log("DASHBOARD_URL:", process.env.DASHBOARD_URL);
 
+// Create allowedOrigins list with filter to remove falsy values
+const allowedOrigins = [process.env.CORS_ORIGIN, process.env.DASHBOARD_URL].filter(Boolean);
+
+// CORS Configuration with additional debugging
 app.use(
-    cors({
-        origin: function (origin, callback) {
-            // Allow requests from Postman or mobile apps with no origin
-            if (!origin) return callback(null, true);
+  cors({
+    origin: function (origin, callback) {
+      console.log('Received Origin:', origin); // Debugging: Log the incoming origin
 
-            // Check if the origin is in the allowedOrigins list
-            if (!allowedOrigins.includes(origin)) {
-                const msg = `CORS policy does not allow access from origin: ${origin}`;
-                return callback(new Error(msg), false); // Reject with an error
-            }
+      // Allow requests with no origin (Postman, mobile apps, etc.)
+      if (!origin) {
+        console.log('No origin provided (likely Postman or mobile app)');
+        return callback(null, true);
+      }
 
-            return callback(null, true); // Allow the request
-        },
-        credentials: true, // Allow cookies to be sent
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Allowed HTTP methods
-        allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'], // Allowed headers
-        exposedHeaders: ['Set-Cookie'], // Allow `Set-Cookie` header to be accessible in the response
-    })
+      // Debugging: Check if the origin is in the allowed list
+      if (!allowedOrigins.includes(origin)) {
+        const msg = `CORS policy does not allow access from origin: ${origin}`;
+        console.error(msg); // Debugging: Log the error if origin is not allowed
+        return callback(new Error(msg), false); // Reject the request
+      }
+
+      console.log('Origin is allowed:', origin); // Debugging: Confirm the origin is allowed
+      return callback(null, true); // Allow the request
+    },
+    credentials: true, // Allow cookies to be sent
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Allowed HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'], // Allowed headers
+    exposedHeaders: ['Set-Cookie'], // Expose cookies to frontend
+  })
 );
 
 // Middleware to parse URL-encoded data
@@ -51,7 +63,7 @@ app.use(express.urlencoded({ extended: true }));
 // Middleware to parse cookies
 app.use(cookieParser());
 
-// Define the API routes
+// API routes
 app.use('/api/v1/user', userrouter);
 app.use('/api/v1/shoppingitems', shoppingitems);
 app.use('/api/v1/category', categoryrouter);
@@ -64,5 +76,5 @@ app.use('/api/v1/banner', bannerrouter);
 app.use('/api/v1/sales', salesrouter);
 app.use('/api/v1/reviews', reviewsrouter);
 
+// Start the server
 export { app };
-export default app; // Export the app for use in other modules
