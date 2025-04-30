@@ -20,6 +20,7 @@ app.use(express.static('public'));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+console.log(process.env);  // Log all environment variables
 
 // Debugging check: Print out the loaded CORS-related environment variables
 console.log("CORS_ORIGIN:", process.env.CORS_ORIGIN);
