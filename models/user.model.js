@@ -27,7 +27,6 @@ type:String,
     },
    loyaltycard_no:{
     type:String,
-    unique:true,
     default:0
    },
    loyalty_points:{
