@@ -443,7 +443,9 @@ const login = asynchandler(async (req, res) => {
     // Set cookie options
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None',
+        maxAge: 30 * 24 * 60 * 60 * 1000 
     };
 
     // Get user data without password
