@@ -171,7 +171,7 @@ export const addimages = asynchandler(async (req, res) => {
   try {
     const images = req.files;
 
-    for (const image of images) {
+    const updatePromises = images.map(async (image) => {
       const itemId = image.originalname.split('.')[0];
 
       const updatedItem = await ShoppingItem.findOneAndUpdate(
@@ -183,14 +183,20 @@ export const addimages = asynchandler(async (req, res) => {
       if (!updatedItem) {
         console.warn(`No shopping item found with id: ${itemId}`);
       }
-    }
+
+      return updatedItem;
+    });
+
+    await Promise.all(updatePromises);
 
     return res.json({ status: 200, message: "Images added successfully" });
+
   } catch (error) {
     console.error("Error adding images:", error);
     return res.json(new apierror(500, "Error adding images", error));
   }
 });
+
 
 export const getshoppingitem = asynchandler(async (req, res) => {
   const { id } = req.body;
