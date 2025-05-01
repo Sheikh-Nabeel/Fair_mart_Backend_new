@@ -25,10 +25,10 @@ type:String,
         type: String,
         required: true,
     },
-   loyaltycard_no:{
-    type:String,
-    default:0
-   },
+//    loyaltycard_no:{
+//     type:String,
+//     default:0
+//    },
    loyalty_points:{
     type:Number,
 default:0
