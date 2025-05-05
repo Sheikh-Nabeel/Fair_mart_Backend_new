@@ -12,11 +12,12 @@ import achievementrouter from './Routes/achievement.routes.js'
 import bannerrouter from './Routes/banner.routes.js'
 import salesrouter from './Routes/sales.routes.js'
 import reviewsrouter from './Routes/reviews.routes.js'
+import newsrouter from './Routes/news.routes.js'
 const app=express()
 app.use(express.static('public'))
 
 app.use(express.json())
-const allowedOrigins = ["https://24sevenfairmart.com", "https://dashboard.24sevenfairmart.com"];
+const allowedOrigins = ["http://localhost:5173", "https://dashboard.24sevenfairmart.com"];
 
 app.use(
     cors({
@@ -52,6 +53,10 @@ app.use('/api/v1/achievement',achievementrouter)
 app.use('/api/v1/banner',bannerrouter)
 app.use('/api/v1/sales',salesrouter)
 app.use('/api/v1/reviews',reviewsrouter)
+app.use('/api/v1/news',newsrouter)
+app.get('/',(req,res)=>{
+    res.send('API is running')
+})
  
 
 
