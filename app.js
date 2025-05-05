@@ -13,6 +13,7 @@ import bannerrouter from './Routes/banner.routes.js'
 import salesrouter from './Routes/sales.routes.js'
 import reviewsrouter from './Routes/reviews.routes.js'
 import newsrouter from './Routes/news.routes.js'
+import dbrouter from './Routes/db.routes.js'
 const app=express()
 app.use(express.static('public'))
 
@@ -54,6 +55,7 @@ app.use('/api/v1/banner',bannerrouter)
 app.use('/api/v1/sales',salesrouter)
 app.use('/api/v1/reviews',reviewsrouter)
 app.use('/api/v1/news',newsrouter)
+app.use('/api/v1/db', dbrouter)
 app.get('/',(req,res)=>{
     res.send('API is running')
 })
