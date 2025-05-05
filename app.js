@@ -17,7 +17,7 @@ const app=express()
 app.use(express.static('public'))
 
 app.use(express.json())
-const allowedOrigins = ["http://localhost:5173", "https://dashboard.24sevenfairmart.com"];
+const allowedOrigins = ["https://24sevenfairmart.com", "https://dashboard.24sevenfairmart.com"];
 
 app.use(
     cors({
