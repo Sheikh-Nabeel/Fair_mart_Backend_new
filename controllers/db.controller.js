@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
 import { ShoppingItem } from "../models/shoppingitem.model.js";
 import { Order } from "../models/orders.model.js";
-import { Category } from "../models/category.model.js";
+import { Category } from "../models/Category.model.js";
 import { Shipping } from "../models/shipping.model.js";
 import { Event } from "../models/event.model.js";
 import { About } from "../models/about.model.js";
